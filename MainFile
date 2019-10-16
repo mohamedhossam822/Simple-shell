@@ -1,0 +1,86 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
+
+void excutee(char** Line,int NoWords);
+void* WriteLogFile(int pid);
+int main()
+{
+char CommandLine[60];
+char *token;
+int NoWords; //Number of args
+
+while(1)
+ {
+ char **WordOfLine=(char**)malloc(9*10); //Array Of Strings containg the command and the args
+
+     for(int i=0;i<8;i++) //allocating memory for every string
+     {
+     WordOfLine[i]=(char*)malloc(10*sizeof(char));
+     }
+  fflush(stdin);
+  printf("\nWrite Your Command :");
+  scanf("%[^\n]s",CommandLine);
+
+  NoWords=0;
+  token=strtok(CommandLine," ");
+  while(token!=NULL)
+  {
+  strcpy(WordOfLine[NoWords],token);
+  token=strtok(NULL," ");
+  NoWords++;
+  }
+  WordOfLine[NoWords]=NULL;
+  if(strcmp(WordOfLine[0],"exit")==0)
+  {
+  exit(0);
+  }
+  excutee(WordOfLine,NoWords);
+  NoWords=0;
+  getchar();
+ }
+return 0;
+}
+
+void excutee(char** Line,int NoWords)
+{
+  int pid=fork();
+  if(pid==0)
+  {
+    // I am the child
+    if(strcmp(Line[NoWords-1],"&")==0)
+      {
+      Line[NoWords-1]=NULL;
+      execvp(Line[0],Line);
+      }
+    else execvp(Line[0],Line);
+    exit(0);
+  }
+  else if(pid>0)
+  {
+      // I am the parent
+      if(strcmp(Line[NoWords-1],"&")==0)
+      {
+
+
+      }
+      else wait(NULL);
+      signal(SIGCHLD,WriteLogFile(pid));
+  }
+  else 
+    {
+    printf("\nCouldn't Get The Child :(\n");
+    }
+}
+void* WriteLogFile(int pid)
+{
+  
+ FILE*LogFile;
+ LogFile=fopen("Logs.txt","a");
+ if(LogFile==NULL) printf("Error Creating the File\n");
+ fprintf(LogFile,"Child %d has been terminated\n",pid);
+ fclose(LogFile);
+}
